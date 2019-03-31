@@ -147,18 +147,22 @@ func (p *Parser) block(data []byte) {
 		// ## Heading 2
 		// ...
 		// ###### Heading 6
-		if p.extensions&Headings != 0 && p.isPrefixHeading(data) {
-			data = data[p.prefixHeading(data):]
-			continue
+		if p.extensions&Headings != 0 {
+			if p.isPrefixHeading(data) {
+				data = data[p.prefixHeading(data):]
+				continue
+			}
 		}
 
 		// prefixed special heading:
 		// (there are no levels.)
 		//
 		// .# Abstract
-		if p.extensions&Headings != 0 && p.isPrefixSpecialHeading(data) {
-			data = data[p.prefixSpecialHeading(data):]
-			continue
+		if p.extensions&Headings != 0 {
+			if p.isPrefixSpecialHeading(data) {
+				data = data[p.prefixSpecialHeading(data):]
+				continue
+			}
 		}
 
 		// block of preformatted HTML:
@@ -370,6 +374,10 @@ func (p *Parser) addBlock(n ast.Node) ast.Node {
 }
 
 func (p *Parser) isPrefixHeading(data []byte) bool {
+	if p.extensions&Headings == 0 {
+		return false
+	}
+
 	if data[0] != '#' {
 		return false
 	}
