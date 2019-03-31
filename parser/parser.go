@@ -29,6 +29,7 @@ const (
 	Lists                                         // Parse lists
 	Tables                                        // Parse tables
 	FencedCode                                    // Parse fenced code blocks
+	ExtendedFencedCode                            // Parse fenced code blocks with {}
 	NoIndentCodeBlock                             // Ignores indented fenced code blocks
 	Autolink                                      // Detect embedded URLs that are not explicitly marked
 	Strikethrough                                 // Strikethrough text using ~~test~~
@@ -156,15 +157,13 @@ func NewWithExtensions(extension Extensions) *Parser {
 	}
 	p.inlineCallback['`'] = codeSpan
 	p.inlineCallback['\n'] = lineBreak
-	if p.extensions&Links != 0 {
-		p.inlineCallback['['] = link
+	p.inlineCallback['['] = link
+	if p.extensions&HTML != 0 {
+		p.inlineCallback['<'] = leftAngle
 	}
-	p.inlineCallback['<'] = leftAngle
 	p.inlineCallback['\\'] = escape
 	p.inlineCallback['&'] = entity
-	if p.extensions&Images != 0 {
-		p.inlineCallback['!'] = maybeImage
-	}
+	p.inlineCallback['!'] = maybeImage
 	if p.extensions&Mmark != 0 {
 		p.inlineCallback['('] = maybeShortRefOrIndex
 	}

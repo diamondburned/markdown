@@ -3,6 +3,7 @@ package parser
 import (
 	"bytes"
 	"html"
+	"log"
 	"regexp"
 	"strconv"
 	"unicode"
@@ -796,7 +797,7 @@ func (*Parser) isHRule(data []byte) bool {
 // isFenceLine checks if there's a fence line (e.g., ``` or ``` go) at the beginning of data,
 // and returns the end index if so, or 0 otherwise. It also returns the marker found.
 // If syntax is not nil, it gets set to the syntax specified in the fence line.
-func isFenceLine(data []byte, syntax *string, oldmarker string) (end int, marker string) {
+func isFenceLine(data []byte, syntax *string, oldmarker string, extended bool) (end int, marker string) {
 	i, size := 0, 0
 
 	n := len(data)
@@ -847,7 +848,7 @@ func isFenceLine(data []byte, syntax *string, oldmarker string) (end int, marker
 
 		syntaxStart := i
 
-		if data[i] == '{' {
+		if data[i] == '{' && extended {
 			i++
 			syntaxStart++
 
@@ -873,7 +874,10 @@ func isFenceLine(data []byte, syntax *string, oldmarker string) (end int, marker
 
 			i++
 		} else {
-			for i < n && !isSpace(data[i]) {
+			for i < n && data[i] != '\n' {
+				if data[i] == ' ' {
+					return 3, marker
+				}
 				syn++
 				i++
 			}
@@ -897,7 +901,7 @@ func isFenceLine(data []byte, syntax *string, oldmarker string) (end int, marker
 // If doRender is true, a final newline is mandatory to recognize the fenced code block.
 func (p *Parser) fencedCodeBlock(data []byte, doRender bool) int {
 	var syntax string
-	beg, marker := isFenceLine(data, &syntax, "")
+	beg, marker := isFenceLine(data, &syntax, "", p.extensions&ExtendedFencedCode != 0)
 	if beg == 0 || beg >= len(data) {
 		return 0
 	}
@@ -910,7 +914,7 @@ func (p *Parser) fencedCodeBlock(data []byte, doRender bool) int {
 		// safe to assume beg < len(data)
 
 		// check for the end of the code block
-		fenceEnd, _ := isFenceLine(data[beg:], nil, marker)
+		fenceEnd, _ := isFenceLine(data[beg:], nil, marker, p.extensions&ExtendedFencedCode != 0)
 		if fenceEnd != 0 {
 			beg += fenceEnd
 			break
@@ -921,6 +925,7 @@ func (p *Parser) fencedCodeBlock(data []byte, doRender bool) int {
 
 		// did we reach the end of the buffer without a closing marker?
 		if end >= len(data) {
+			log.Println(end, string(data))
 			return 0
 		}
 
@@ -935,6 +940,7 @@ func (p *Parser) fencedCodeBlock(data []byte, doRender bool) int {
 		codeBlock := &ast.CodeBlock{
 			IsFenced: true,
 		}
+
 		codeBlock.Content = work.Bytes() // TODO: get rid of temp buffer
 
 		if p.extensions&Mmark == 0 {
@@ -1272,7 +1278,7 @@ func (p *Parser) terminateBlockquote(data []byte, beg, end int) bool {
 	if end >= len(data) {
 		return true
 	}
-	return p.quotePrefix(data[end:]) == 0 && p.isEmpty(data[end:]) == 0
+	return p.isEmpty(data[end:]) == 0
 }
 
 // parse a blockquote fragment
