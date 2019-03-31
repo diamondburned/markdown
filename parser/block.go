@@ -288,7 +288,7 @@ func (p *Parser) block(data []byte) {
 		// * Item 2
 		//
 		// also works with + or -
-		if p.uliPrefix(data) > 0 {
+		if p.extensions&Lists != 0 && p.uliPrefix(data) > 0 {
 			data = data[p.list(data, 0, 0):]
 			continue
 		}
