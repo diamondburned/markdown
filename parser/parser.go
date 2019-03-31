@@ -21,6 +21,7 @@ const (
 	NoExtensions           Extensions = 0
 	NoIntraEmphasis        Extensions = 1 << iota // Ignore emphasis markers inside words
 	TripleEmphasis                                // Parse triple emphasis
+	Spoilers                                      // Parse ||spoilers||
 	Images                                        // Parse images
 	Links                                         // Parse links
 	HTML                                          // Parse HTML
@@ -152,6 +153,9 @@ func NewWithExtensions(extension Extensions) *Parser {
 	p.inlineCallback[' '] = maybeLineBreak
 	p.inlineCallback['*'] = emphasis
 	p.inlineCallback['_'] = emphasis
+	if p.extensions&Spoilers != 0 {
+		p.inlineCallback['|'] = emphasis
+	}
 	if p.extensions&Strikethrough != 0 {
 		p.inlineCallback['~'] = emphasis
 	}

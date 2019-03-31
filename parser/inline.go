@@ -1201,6 +1201,8 @@ func helperDoubleEmphasis(p *Parser, data []byte, c byte) (int, ast.Node) {
 				node = &ast.Del{}
 			} else if c == '_' {
 				node = &ast.Und{}
+			} else if c == '|' {
+				node = &ast.Spoiler{}
 			}
 			p.Inline(node, data[:i])
 			return i + 2, node

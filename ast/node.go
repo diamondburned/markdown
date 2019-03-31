@@ -231,6 +231,11 @@ type HorizontalRule struct {
 	Leaf
 }
 
+// Spoiler represents markdown spoiler node
+type Spoiler struct {
+	Container
+}
+
 // Und represents markdown underline node
 type Und struct {
 	Container
