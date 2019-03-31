@@ -7,7 +7,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/gomarkdown/markdown/ast"
+	"github.com/diamondburned/markdown/ast"
 )
 
 // Parsing block-level elements.
@@ -146,7 +146,7 @@ func (p *Parser) block(data []byte) {
 		// ## Heading 2
 		// ...
 		// ###### Heading 6
-		if p.isPrefixHeading(data) {
+		if p.extensions&Headings != 0 && p.isPrefixHeading(data) {
 			data = data[p.prefixHeading(data):]
 			continue
 		}
@@ -155,7 +155,7 @@ func (p *Parser) block(data []byte) {
 		// (there are no levels.)
 		//
 		// .# Abstract
-		if p.isPrefixSpecialHeading(data) {
+		if p.extensions&Headings != 0 && p.isPrefixSpecialHeading(data) {
 			data = data[p.prefixSpecialHeading(data):]
 			continue
 		}
@@ -165,7 +165,7 @@ func (p *Parser) block(data []byte) {
 		// <div>
 		//     ...
 		// </div>
-		if data[0] == '<' {
+		if p.extensions&HTML != 0 && data[0] == '<' {
 			if i := p.html(data, true); i > 0 {
 				data = data[i:]
 				continue
@@ -200,7 +200,7 @@ func (p *Parser) block(data []byte) {
 		//         }
 		//         return b
 		//      }
-		if p.codePrefix(data) > 0 {
+		if p.extensions&NoIndentCodeBlock == 0 && p.codePrefix(data) > 0 {
 			data = data[p.code(data):]
 			continue
 		}
@@ -229,7 +229,7 @@ func (p *Parser) block(data []byte) {
 		// ******
 		// or
 		// ______
-		if p.isHRule(data) {
+		if p.extensions&Rules != 0 && p.isHRule(data) {
 			p.addBlock(&ast.HorizontalRule{})
 			i := skipUntilChar(data, 0, '\n')
 			data = data[i:]
@@ -297,17 +297,19 @@ func (p *Parser) block(data []byte) {
 		//
 		// 1. Item 1
 		// 2. Item 2
-		if i := p.oliPrefix(data); i > 0 {
-			start := 0
-			if i > 2 && p.extensions&OrderedListStart != 0 {
-				s := string(data[:i-2])
-				start, _ = strconv.Atoi(s)
-				if start == 1 {
-					start = 0
+		if p.extensions&Lists != 0 {
+			if i := p.oliPrefix(data); i > 0 {
+				start := 0
+				if i > 2 && p.extensions&OrderedListStart != 0 {
+					s := string(data[:i-2])
+					start, _ = strconv.Atoi(s)
+					if start == 1 {
+						start = 0
+					}
 				}
+				data = data[p.list(data, ast.ListTypeOrdered, start):]
+				continue
 			}
-			data = data[p.list(data, ast.ListTypeOrdered, start):]
-			continue
 		}
 
 		// definition lists:

@@ -6,6 +6,8 @@ Package `github.com/gomarkdown/markdown` is a very fast Go library for parsing [
 
 It's fast and supports common extensions.
 
+This has been forked from `gomarkdown` to add extra customizability to limit Markdown capabilities as well as underline support.
+
 ## Installation
 
     go get -u github.com/gomarkdown/markdown

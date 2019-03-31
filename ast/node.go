@@ -231,6 +231,11 @@ type HorizontalRule struct {
 	Leaf
 }
 
+// Und represents markdown underline node
+type Und struct {
+	Container
+}
+
 // Emph represents markdown emphasis node
 type Emph struct {
 	Container

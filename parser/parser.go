@@ -9,7 +9,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
-	"github.com/gomarkdown/markdown/ast"
+	"github.com/diamondburned/markdown/ast"
 )
 
 // Extensions is a bitmask of enabled parser extensions.
@@ -20,8 +20,16 @@ type Extensions int
 const (
 	NoExtensions           Extensions = 0
 	NoIntraEmphasis        Extensions = 1 << iota // Ignore emphasis markers inside words
+	TripleEmphasis                                // Parse triple emphasis
+	Images                                        // Parse images
+	Links                                         // Parse links
+	HTML                                          // Parse HTML
+	Rules                                         // Parse horizontal rules
+	Headings                                      // Parse headings
+	Lists                                         // Parse lists
 	Tables                                        // Parse tables
 	FencedCode                                    // Parse fenced code blocks
+	NoIndentCodeBlock                             // Ignores indented fenced code blocks
 	Autolink                                      // Detect embedded URLs that are not explicitly marked
 	Strikethrough                                 // Strikethrough text using ~~test~~
 	LaxHTMLBlocks                                 // Loosen up HTML block parsing rules
@@ -43,7 +51,8 @@ const (
 	Includes                                      // Support including other files.
 	Mmark                                         // Support Mmark syntax, see https://mmark.nl/syntax
 
-	CommonExtensions Extensions = NoIntraEmphasis | Tables | FencedCode |
+	CommonExtensions Extensions = NoIntraEmphasis | Images | Links |
+		HTML | Rules | Headings | Lists | Tables | FencedCode |
 		Autolink | Strikethrough | SpaceHeadings | HeadingIDs |
 		BackslashLineBreak | DefinitionLists | MathJax
 )
@@ -147,11 +156,15 @@ func NewWithExtensions(extension Extensions) *Parser {
 	}
 	p.inlineCallback['`'] = codeSpan
 	p.inlineCallback['\n'] = lineBreak
-	p.inlineCallback['['] = link
+	if p.extensions&Links != 0 {
+		p.inlineCallback['['] = link
+	}
 	p.inlineCallback['<'] = leftAngle
 	p.inlineCallback['\\'] = escape
 	p.inlineCallback['&'] = entity
-	p.inlineCallback['!'] = maybeImage
+	if p.extensions&Images != 0 {
+		p.inlineCallback['!'] = maybeImage
+	}
 	if p.extensions&Mmark != 0 {
 		p.inlineCallback['('] = maybeShortRefOrIndex
 	}

@@ -4,9 +4,9 @@ import (
 	"bytes"
 	"io"
 
-	"github.com/gomarkdown/markdown/ast"
-	"github.com/gomarkdown/markdown/html"
-	"github.com/gomarkdown/markdown/parser"
+	"github.com/diamondburned/markdown/ast"
+	"github.com/diamondburned/markdown/html"
+	"github.com/diamondburned/markdown/parser"
 )
 
 // Renderer is an interface for implementing custom renderers.

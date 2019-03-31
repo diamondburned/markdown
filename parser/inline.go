@@ -5,7 +5,7 @@ import (
 	"regexp"
 	"strconv"
 
-	"github.com/gomarkdown/markdown/ast"
+	"github.com/diamondburned/markdown/ast"
 )
 
 // Parsing of inline elements
@@ -108,16 +108,18 @@ func emphasis(p *Parser, data []byte, offset int) (int, ast.Node) {
 		return ret + 2, node
 	}
 
-	if n > 4 && data[1] == c && data[2] == c && data[3] != c {
-		if c == '~' || isSpace(data[3]) {
-			return 0, nil
-		}
-		ret, node := helperTripleEmphasis(p, data, 3, c)
-		if ret == 0 {
-			return 0, nil
-		}
+	if p.extensions&TripleEmphasis != 0 {
+		if n > 4 && data[1] == c && data[2] == c && data[3] != c {
+			if c == '~' || isSpace(data[3]) {
+				return 0, nil
+			}
+			ret, node := helperTripleEmphasis(p, data, 3, c)
+			if ret == 0 {
+				return 0, nil
+			}
 
-		return ret + 3, node
+			return ret + 3, node
+		}
 	}
 
 	return 0, nil
@@ -205,7 +207,7 @@ func isReferenceStyleLink(data []byte, pos int, t linkType) bool {
 }
 
 func maybeImage(p *Parser, data []byte, offset int) (int, ast.Node) {
-	if offset < len(data)-1 && data[offset+1] == '[' {
+	if p.extensions&Images != 0 && offset < len(data)-1 && data[offset+1] == '[' {
 		return link(p, data, offset)
 	}
 	return 0, nil
@@ -236,6 +238,10 @@ func maybeInlineFootnoteOrSuper(p *Parser, data []byte, offset int) (int, ast.No
 
 // '[': parse a link or an image or a footnote or a citation
 func link(p *Parser, data []byte, offset int) (int, ast.Node) {
+	if p.extensions&Links == 0 {
+		return 0, nil
+	}
+
 	// no links allowed inside regular links, footnote, and deferred footnotes
 	if p.insideLink && (offset > 0 && data[offset-1] == '[' || len(data)-1 > offset && data[offset+1] == '^') {
 		return 0, nil
@@ -1193,6 +1199,8 @@ func helperDoubleEmphasis(p *Parser, data []byte, c byte) (int, ast.Node) {
 			var node ast.Node = &ast.Strong{}
 			if c == '~' {
 				node = &ast.Del{}
+			} else if c == '_' {
+				node = &ast.Und{}
 			}
 			p.Inline(node, data[:i])
 			return i + 2, node
